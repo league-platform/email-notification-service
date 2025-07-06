@@ -13,7 +13,7 @@ jobs:
 
     env:
       HOST: ${{ secrets.EC2_EMAIL_QA_IP }}
-      MONGO_URI: ${{ secrets.QA_MONGO_URI }} 
+      MONGO_URI: ${{ secrets.QA_MONGO_URI }}
       MONGO_DB: league-auth
 
     steps:
@@ -26,10 +26,16 @@ jobs:
           echo "${{ secrets.EC2_EMAIL_QA_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
+
+      - name: 🔍 Test SSH Connection
+        run: |
+          echo "👉 Testing SSH connection to $HOST"
+          ssh -vvv -o StrictHostKeyChecking=no ec2-user@$HOST "echo '✅ SSH Connected'"
 
       - name: Deploy to EC2 QA
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@$HOST << EOF
+          ssh -T -o StrictHostKeyChecking=no ec2-user@$HOST << EOF
             sudo dnf update -y
             sudo dnf install -y git docker
 
