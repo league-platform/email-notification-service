@@ -13,7 +13,7 @@ jobs:
 
     env:
       HOST: ${{ secrets.EC2_EMAIL_QA_IP }}
-      MONGO_URI: ${{ secrets.QA_MONGO_URI }}   # ej: mongodb://auth_user:auth_pass_2025@23.21.140.203:27017/league-auth?authSource=admin
+      MONGO_URI: ${{ secrets.QA_MONGO_URI }} 
       MONGO_DB: league-auth
 
     steps:
