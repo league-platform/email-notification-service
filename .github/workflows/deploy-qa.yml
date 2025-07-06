@@ -13,6 +13,8 @@ jobs:
 
     env:
       HOST: ${{ secrets.EC2_EMAIL_QA_IP }}
+      MONGO_URI: ${{ secrets.QA_MONGO_URI }}   # ej: mongodb://auth_user:auth_pass_2025@23.21.140.203:27017/league-auth?authSource=admin
+      MONGO_DB: league-auth
 
     steps:
       - name: Checkout
@@ -35,7 +37,8 @@ jobs:
             sudo usermod -aG docker ec2-user
 
             mkdir -p ~/.docker/cli-plugins
-            curl -SL https://github.com/docker/compose/releases/download/v2.27.1/docker-compose-linux-x86_64               -o ~/.docker/cli-plugins/docker-compose
+            curl -SL https://github.com/docker/compose/releases/download/v2.27.1/docker-compose-linux-x86_64 \
+              -o ~/.docker/cli-plugins/docker-compose
             chmod +x ~/.docker/cli-plugins/docker-compose
             sudo ln -sf ~/.docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
 
@@ -52,5 +55,5 @@ jobs:
             git pull origin qa
 
             docker compose down || true
-            docker compose up -d --build
+            MONGO_URI="${MONGO_URI}" MONGO_DB="${MONGO_DB}" docker compose up -d --build
           EOF
