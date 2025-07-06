@@ -38,6 +38,8 @@ jobs:
       - name: Deploy to EC2 QA
         run: |
           ssh -T -o StrictHostKeyChecking=no ec2-user@$HOST << EOF
+            set -e  # Salir si ocurre un error
+
             sudo dnf update -y
             sudo dnf install -y git docker
 
@@ -62,6 +64,10 @@ jobs:
             git reset --hard
             git pull origin qa
 
-            docker compose down || true
+            echo "📁 Listing docker-compose location:"
+            ls -la
+
+            echo "🐳 Running Docker Compose in the correct path"
+            MONGO_URI="${MONGO_URI}" MONGO_DB="${MONGO_DB}" docker compose down || true
             MONGO_URI="${MONGO_URI}" MONGO_DB="${MONGO_DB}" docker compose up -d --build
           EOF
