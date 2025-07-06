@@ -14,3 +14,7 @@ async def send_email_endpoint(email: EmailRequest, request: Request):
         return {"message": "Email sent successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/ping", tags=["Health"])
+async def ping():
+    return {"message": "pong"}
