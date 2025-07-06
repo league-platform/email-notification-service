@@ -54,9 +54,8 @@ jobs:
 
             cd /home/ec2-user
 
-            if [ ! -d email-notification-service ]; then
-              git clone --branch qa https://github.com/league-platform/email-notification-service.git
-            fi
+            rm -rf email-notification-service
+            git clone --branch qa https://github.com/league-platform/email-notification-service.git
 
             cd email-notification-service
             sudo chown -R ec2-user:ec2-user .
