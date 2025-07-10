@@ -13,6 +13,8 @@ jobs:
 
     env:
       HOST: ${{ secrets.EC2_EMAIL_QA_IP }}
+      MONGO_URI: ${{ secrets.QA_MONGO_URI }}
+      MONGO_DB: league-auth
 
     steps:
       - name: Checkout
@@ -24,10 +26,20 @@ jobs:
           echo "${{ secrets.EC2_EMAIL_QA_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          echo "🔍 Trying ssh-keyscan on $HOST..."
+          ssh-keyscan -vvv -T 5 -p 22 $HOST >> ~/.ssh/known_hosts
+        shell: bash
+
+      - name: 🔍 Test SSH Connection
+        run: |
+          echo "👉 Testing SSH connection to $HOST"
+          ssh -vvv -o StrictHostKeyChecking=no ec2-user@$HOST "echo '✅ SSH Connected'"
 
       - name: Deploy to EC2 QA
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@$HOST << 'EOF'
+          ssh -T -o StrictHostKeyChecking=no ec2-user@$HOST << EOF
+            set -e  # Salir si ocurre un error
+
             sudo dnf update -y
             sudo dnf install -y git docker
 
@@ -35,15 +47,15 @@ jobs:
             sudo usermod -aG docker ec2-user
 
             mkdir -p ~/.docker/cli-plugins
-            curl -SL https://github.com/docker/compose/releases/download/v2.27.1/docker-compose-linux-x86_64               -o ~/.docker/cli-plugins/docker-compose
+            curl -SL https://github.com/docker/compose/releases/download/v2.27.1/docker-compose-linux-x86_64 \
+              -o ~/.docker/cli-plugins/docker-compose
             chmod +x ~/.docker/cli-plugins/docker-compose
             sudo ln -sf ~/.docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
 
             cd /home/ec2-user
 
-            if [ ! -d email-notification-service ]; then
-              git clone --branch qa https://github.com/league-platform/email-notification-service.git
-            fi
+            rm -rf email-notification-service
+            git clone --branch qa https://github.com/league-platform/email-notification-service.git
 
             cd email-notification-service
             sudo chown -R ec2-user:ec2-user .
@@ -51,6 +63,10 @@ jobs:
             git reset --hard
             git pull origin qa
 
-            docker compose down || true
-            docker compose up -d --build
+            echo "📁 Listing docker-compose location:"
+            ls -la
+
+            echo "🐳 Running Docker Compose in the correct path"
+            MONGO_URI="${MONGO_URI}" MONGO_DB="${MONGO_DB}" docker compose down || true
+            MONGO_URI="${MONGO_URI}" MONGO_DB="${MONGO_DB}" docker compose up -d --build
           EOF
